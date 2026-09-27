@@ -45,20 +45,22 @@ class ResponseGenerator:
                 action_steps=["அரசு நலத்திட்டம் அல்லது சேவை பெயரைக் குறிப்பிட்டு மீண்டும் கேட்கவும்."]
             )
 
-        # FIX 1 & 7: Static Reference Sources with transparency
+        # Static Reference Sources with verification metadata
         primary_scheme = schemes[0]
         scheme_raw = next((s for s in TAMIL_NADU_SCHEMES if s["id"] == primary_scheme.scheme_id), None)
         if scheme_raw:
+            sv = scheme_raw.get("source_verification", {})
             sources.append(
                 VerificationSource(
                     title=scheme_raw["title_ta"],
                     department=scheme_raw["department"],
                     url=scheme_raw["official_url"],
                     helpline=scheme_raw.get("helpline"),
-                    is_static_seed=True,
-                    verification_status="static_reference"
+                    is_static_seed=sv.get("is_static_seed", True),
+                    verification_status=sv.get("verification_status", "pending_review")
                 )
             )
+
 
         # FIX 5: Safe response generation based on intent and eligibility
         if intent.intent_type == IntentType.ELIGIBILITY_CHECK:
