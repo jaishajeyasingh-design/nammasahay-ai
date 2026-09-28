@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.chat import ChatRequest, ChatResponse, IntentType
 from app.services.eligibility import EligibilityEngine
 from app.services.intent import IntentDetector
 from app.services.response_generator import ResponseGenerator
@@ -28,11 +28,15 @@ def chat_pipeline(request: ChatRequest) -> ChatResponse:
         # 2. Scheme / Service Retrieval
         matched_schemes, retrieval_confidence = scheme_retriever.search(request.message)
 
-        # 3. Eligibility Engine
-        eligibility_result = eligibility_engine.evaluate(
-            profile=request.user_profile,
-            matched_schemes=matched_schemes,
-        )
+        # 3. Eligibility Engine (Only run for explicit eligibility checks)
+        if intent.intent_type == IntentType.ELIGIBILITY_CHECK:
+            eligibility_result = eligibility_engine.evaluate(
+                profile=request.user_profile,
+                matched_schemes=matched_schemes,
+            )
+        else:
+            eligibility_result = None
+
 
         # 4. Response Generation & Tamil formatting with sources
         response = response_generator.generate(

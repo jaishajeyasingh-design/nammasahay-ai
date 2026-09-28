@@ -79,17 +79,21 @@ class ResponseGenerator:
                     f"அதிகாரப்பூர்வ தளத்தில் விவரங்களை சரிபார்க்கவும்: {schemes[0].official_url}"
                 ]
             elif eligibility and eligibility.status == "needs_more_info":
-                missing_str = ", ".join(eligibility.missing_criteria) if eligibility.missing_criteria else "மேலும் விவரங்கள்"
+                missing_str = "\n".join([f"• {item}" for item in eligibility.missing_criteria]) if eligibility.missing_criteria else "மேலும் விவரங்கள்"
                 ta_text = (
-                    f"**{schemes[0].title_ta}** திட்டத்திற்கான தகுதியை முழுமையாக சரிபார்க்க மேலும் விவரங்கள் தேவை:\n"
+                    f"**{schemes[0].title_ta}** திட்டத்திற்கான தகுதியை முழுமையாக சரிபார்க்க மேலும் விவரங்கள் தேவை:\n\n"
                     f"{missing_str}\n\n"
                     f"தயவுசெய்து உங்கள் சுயவிவரத்தில் தேவையான விவரங்களை வழங்கவும்."
                 )
                 en_text = (
-                    f"To fully evaluate eligibility for {schemes[0].title_en}, mandatory details are missing: {missing_str}. "
+                    f"To fully evaluate eligibility for {schemes[0].title_en}, mandatory details are missing:\n{missing_str}\n\n"
                     f"Please provide the requested profile information."
                 )
-                action_steps = ["தேவையான சுயவிவர விவரங்களை (வயது, வருமானம், பாலினம்) உள்ளிடவும்."]
+                action_steps = [
+                    "தேவையான தகுதி விவரங்களை வழங்கவும் (Provide required eligibility details).",
+                    f"அதிகாரப்பூர்வ போர்ட்டலில் சரிபார்க்கவும்: {schemes[0].official_url}"
+                ]
+
             else:
                 ta_text = (
                     f"வழங்கப்பட்ட தகவலின் அடிப்படையில், நீங்கள் **{schemes[0].title_ta}** திட்டத்தின் சில வரம்புகளை பூர்த்தி செய்யவில்லை. "

@@ -9,6 +9,13 @@ from app.schemas.chat import (
     UserProfile,
     VerificationSource,
 )
+from app.schemas.scheme import (
+    GovernmentScheme,
+    SchemeApplicationMethod,
+    SchemeBenefit,
+    SchemeRequiredDocuments,
+    SchemeSourceVerification,
+)
 
 __all__ = [
     "ChatRequest",
@@ -20,4 +27,9 @@ __all__ = [
     "SupportedLanguage",
     "UserProfile",
     "VerificationSource",
+    "GovernmentScheme",
+    "SchemeApplicationMethod",
+    "SchemeBenefit",
+    "SchemeRequiredDocuments",
+    "SchemeSourceVerification",
 ]

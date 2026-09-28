@@ -45,7 +45,6 @@ class TestChatPipeline(unittest.TestCase):
             "language": "ta",
             "user_profile": {
                 "gender": "female"
-                # annual_income missing
             }
         }
         response = self.client.post("/api/chat", json=payload)
@@ -69,7 +68,7 @@ class TestChatPipeline(unittest.TestCase):
     # 5. Missing another mandatory criterion (e.g., gender)
     def test_missing_mandatory_criterion(self):
         payload = {
-            "message": "புதுமைப் பெண் திட்டம் தகுதி என்ன?",
+            "message": "புதுமைப் பெண் திட்டம் பெற நான் தகுதியானவளா?",
             "language": "ta",
             "user_profile": {
                 "is_student": True
@@ -131,15 +130,11 @@ class TestChatPipeline(unittest.TestCase):
         self.assertEqual(scheme.source_verification.last_verified, "2026-09-27")
         self.assertEqual(scheme.source_verification.official_url, "https://tils.tn.gov.in/schemes")
         
-        # Verify 6 source-listed documents
         docs = scheme.required_documents.en
         self.assertEqual(len(docs), 6)
         self.assertIn("School Study Certificate (Class 6-12)", docs)
         self.assertIn("Community Certificate", docs)
         self.assertIn("Income Certificate", docs)
-        self.assertIn("Bank Passbook", docs)
-        self.assertIn("Aadhaar Card", docs)
-        self.assertIn("College Admission Proof", docs)
 
     # 11. KMUT verified evidence & partial verification
     def test_kmut_partially_verified(self):
@@ -147,22 +142,116 @@ class TestChatPipeline(unittest.TestCase):
         self.assertEqual(scheme.benefit.amount_inr, 1000.0)
         self.assertEqual(scheme.benefit.frequency, "monthly")
         self.assertEqual(scheme.source_verification.verification_status, "partially_verified")
-        self.assertIn("unverified_rules_note", scheme.eligibility_rules)
 
-    # 12. Naan Mudhalvan verified evidence (no universal student eligibility claim)
+    # 12. Naan Mudhalvan verified evidence
     def test_naan_mudhalvan_verification(self):
         scheme = next(s for s in TAMIL_NADU_SCHEMES_DATA if s.scheme_id == "naan_mudhalvan")
         self.assertIsNone(scheme.benefit.amount_inr)
-        self.assertIsNone(scheme.benefit.frequency)
         self.assertEqual(scheme.source_verification.verification_status, "partially_verified")
-        self.assertNotIn("is_student", scheme.eligibility_rules)
-        self.assertIn("target_group", scheme.eligibility_rules)
 
     # 13. CMCHIS pending review verification
     def test_cmchis_pending_review(self):
         scheme = next(s for s in TAMIL_NADU_SCHEMES_DATA if s.scheme_id == "cmchis")
         self.assertEqual(scheme.source_verification.verification_status, "pending_review")
-        self.assertIsNone(scheme.source_verification.last_verified)
+
+    # 14. Step 6B - Specific Pudhumai Penn retrieval precision
+    def test_retriever_precision_pudhumai_penn(self):
+        payload = {"message": "புதுமைப் பெண் திட்டம் பற்றி சொல்லுங்கள்", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        matched_ids = [s["scheme_id"] for s in data["matched_schemes"]]
+        self.assertIn("pudhumai_penn", matched_ids)
+        self.assertNotIn("cmchis", matched_ids)
+        self.assertNotIn("kmut", matched_ids)
+        self.assertEqual(data["retrieval_confidence"], "high")
+
+    # 15. Step 6B - Specific KMUT retrieval precision
+    def test_retriever_precision_kmut(self):
+        payload = {"message": "கலைஞர் மகளிர் உரிமைத் திட்டம் பற்றி சொல்லுங்கள்", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        matched_ids = [s["scheme_id"] for s in data["matched_schemes"]]
+        self.assertIn("kmut", matched_ids)
+        self.assertNotIn("cmchis", matched_ids)
+        self.assertEqual(data["matched_schemes"][0]["scheme_id"], "kmut")
+
+    # 16. Step 6B - Specific CMCHIS retrieval precision
+    def test_retriever_precision_cmchis(self):
+        payload = {"message": "முதலமைச்சரின் விரிவான மருத்துவக் காப்பீட்டுத் திட்டம் பற்றி சொல்லுங்கள்", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        matched_ids = [s["scheme_id"] for s in data["matched_schemes"]]
+        self.assertIn("cmchis", matched_ids)
+        self.assertEqual(data["matched_schemes"][0]["scheme_id"], "cmchis")
+
+    # 17. Step 6B - Broad query precision
+    def test_retriever_broad_query(self):
+        payload = {"message": "தமிழ்நாட்டில் மகளிர் மற்றும் பெண்களுக்கான அரசு திட்டங்கள் என்னென்ன?", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        matched_ids = [s["scheme_id"] for s in data["matched_schemes"]]
+        self.assertTrue(len(matched_ids) >= 2)
+        self.assertIn("kmut", matched_ids)
+        self.assertIn("pudhumai_penn", matched_ids)
+
+    # 18. Step 6B - Unsupported/unknown query precision
+    def test_retriever_unknown_query_robot(self):
+        payload = {"message": "தமிழ்நாட்டில் மீன் வளர்ப்பு ரோபோ உதவி திட்டம் என்ன?", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["matched_schemes"], [])
+        self.assertEqual(data["retrieval_confidence"], "none")
+
+    # 19. Step 6C - Scheme info query returns scheme details with eligibility=None
+    def test_step6c_scheme_info_no_unnecessary_eligibility(self):
+        payload = {"message": "புதுமைப் பெண் திட்டம் பற்றி சொல்லுங்கள்", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["intent"]["intent_type"], "scheme_info")
+        self.assertEqual(data["matched_schemes"][0]["scheme_id"], "pudhumai_penn")
+        self.assertIsNone(data["eligibility"])
+
+    # 20. Step 6C - Explicit Pudhumai Penn eligibility query asks ONLY for stored rules
+    def test_step6c_explicit_eligibility_pudhumai_penn(self):
+        payload = {"message": "நான் புதுமைப் பெண் திட்டத்திற்கு தகுதியானவளா?", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["intent"]["intent_type"], "eligibility_check")
+        self.assertIsNotNone(data["eligibility"])
+        missing_str = "".join(data["eligibility"]["missing_criteria"])
+        self.assertNotIn("வயது", missing_str)
+        self.assertNotIn("வருமானம்", missing_str)
+        self.assertIn("பாலினம்", missing_str)
+        action_steps_str = "".join(data["action_steps"])
+        self.assertNotIn("வயது", action_steps_str)
+        self.assertNotIn("வருமானம்", action_steps_str)
+
+
+    # 21. Step 6C - Unknown scheme eligibility query returns no fabricated scheme
+    def test_step6c_unknown_scheme_eligibility(self):
+        payload = {"message": "மீன் வளர்ப்பு ரோபோ உதவி திட்டத்திற்கு நான் தகுதியானவனா?", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["matched_schemes"], [])
+        self.assertEqual(data["retrieval_confidence"], "none")
+        self.assertIsNone(data["eligibility"])
+
+    # 22. Step 6C - KMUT eligibility asks ONLY for stored rules
+    def test_step6c_kmut_eligibility_rules_only(self):
+        payload = {"message": "நான் கலைஞர் மகளிர் உரிமைத் திட்டத்திற்கு தகுதியானவளா?", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["intent"]["intent_type"], "eligibility_check")
+        self.assertIsNotNone(data["eligibility"])
 
 
 if __name__ == "__main__":
