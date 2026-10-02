@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck } from 'lucide-react';
-import { UserProfile } from '../types/api';
+import { UserProfile, SupportedLanguage } from '../types/api';
 
 interface EligibilityModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmitProfile: (profile: UserProfile) => void;
   isLoading: boolean;
+  language?: SupportedLanguage;
 }
 
 export const EligibilityModal: React.FC<EligibilityModalProps> = ({
@@ -14,14 +15,17 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
   onClose,
   onSubmitProfile,
   isLoading,
+  language = 'ta',
 }) => {
+  const isEn = language === 'en';
+
   const [age, setAge] = useState<string>('');
   const [gender, setGender] = useState<string>('female');
   const [occupation, setOccupation] = useState<string>('student');
   const [isStudent, setIsStudent] = useState<boolean>(true);
   const [isHeadOfFamily, setIsHeadOfFamily] = useState<boolean>(false);
   const [annualIncome, setAnnualIncome] = useState<string>('');
-  const [district, setDistrict] = useState<string>('சென்னை');
+  const [district, setDistrict] = useState<string>(isEn ? 'Chennai' : 'சென்னை');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -79,17 +83,17 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
         <div className="modal-header">
           <div className="modal-title-group">
             <h2 id="modal-heading" className="modal-title">
-              🎯 உங்கள் தகுதியை சரிபார்க்கவும்
+              {isEn ? '🎯 Check Your Eligibility' : '🎯 உங்கள் தகுதியை சரிபார்க்கவும்'}
             </h2>
             <p className="modal-subtitle">
-              சில அடிப்படை தகவல்களை மட்டும் உள்ளிடுங்கள்.
+              {isEn ? 'Please enter a few basic details.' : 'சில அடிப்படை தகவல்களை மட்டும் உள்ளிடுங்கள்.'}
             </p>
           </div>
           <button
             type="button"
             className="modal-close-btn"
             onClick={onClose}
-            aria-label="சாளரத்தை மூடு"
+            aria-label={isEn ? 'Close dialog' : 'சாளரத்தை மூடு'}
           >
             <X size={28} />
           </button>
@@ -100,14 +104,14 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
             {/* 1. Age */}
             <div className="form-group">
               <label htmlFor="modal-age" className="form-label">
-                வயது
+                {isEn ? 'Age' : 'வயது'}
               </label>
               <input
                 id="modal-age"
                 type="number"
                 min="1"
                 max="120"
-                placeholder="எடுத்துக்காட்டு: 21"
+                placeholder={isEn ? 'e.g. 21' : 'எடுத்துக்காட்டு: 21'}
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
                 className="form-input"
@@ -117,7 +121,7 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
             {/* 2. Gender */}
             <div className="form-group">
               <label htmlFor="modal-gender" className="form-label">
-                பாலினம்
+                {isEn ? 'Gender' : 'பாலினம்'}
               </label>
               <select
                 id="modal-gender"
@@ -125,15 +129,15 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
                 onChange={(e) => setGender(e.target.value)}
                 className="form-select"
               >
-                <option value="female">பெண்</option>
-                <option value="male">ஆண்</option>
-                <option value="other">மற்றவை</option>
+                <option value="female">{isEn ? 'Female' : 'பெண்'}</option>
+                <option value="male">{isEn ? 'Male' : 'ஆண்'}</option>
+                <option value="other">{isEn ? 'Other' : 'மற்றவை'}</option>
               </select>
             </div>
 
             {/* 3. Student Status */}
             <div className="form-group">
-              <span className="form-label">நீங்கள் மாணவரா?</span>
+              <span className="form-label">{isEn ? 'Are you a student?' : 'நீங்கள் மாணவரா?'}</span>
               <div className="radio-options-row">
                 <label className="radio-option">
                   <input
@@ -142,7 +146,7 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
                     checked={isStudent === true}
                     onChange={() => setIsStudent(true)}
                   />
-                  <span>ஆம்</span>
+                  <span>{isEn ? 'Yes' : 'ஆம்'}</span>
                 </label>
                 <label className="radio-option">
                   <input
@@ -151,14 +155,16 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
                     checked={isStudent === false}
                     onChange={() => setIsStudent(false)}
                   />
-                  <span>இல்லை</span>
+                  <span>{isEn ? 'No' : 'இல்லை'}</span>
                 </label>
               </div>
             </div>
 
             {/* 4. Head of Family */}
             <div className="form-group">
-              <span className="form-label">குடும்பத் தலைவியா?</span>
+              <span className="form-label">
+                {isEn ? 'Head of household (woman)?' : 'குடும்பத் தலைவியா?'}
+              </span>
               <div className="radio-options-row">
                 <label className="radio-option">
                   <input
@@ -167,7 +173,7 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
                     checked={isHeadOfFamily === true}
                     onChange={() => setIsHeadOfFamily(true)}
                   />
-                  <span>ஆம்</span>
+                  <span>{isEn ? 'Yes' : 'ஆம்'}</span>
                 </label>
                 <label className="radio-option">
                   <input
@@ -176,7 +182,7 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
                     checked={isHeadOfFamily === false}
                     onChange={() => setIsHeadOfFamily(false)}
                   />
-                  <span>இல்லை</span>
+                  <span>{isEn ? 'No' : 'இல்லை'}</span>
                 </label>
               </div>
             </div>
@@ -184,7 +190,7 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
             {/* 5. Occupation */}
             <div className="form-group">
               <label htmlFor="modal-occupation" className="form-label">
-                தொழில்
+                {isEn ? 'Occupation' : 'தொழில்'}
               </label>
               <select
                 id="modal-occupation"
@@ -197,26 +203,26 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
                 }}
                 className="form-select"
               >
-                <option value="student">மாணவர்</option>
-                <option value="employee">பணியாளர்</option>
-                <option value="farmer">விவசாயி</option>
-                <option value="self_employed">சுயதொழில்</option>
-                <option value="unemployed">வேலையில்லாதவர்</option>
-                <option value="other">மற்றவை</option>
+                <option value="student">{isEn ? 'Student' : 'மாணவர்'}</option>
+                <option value="employee">{isEn ? 'Employee' : 'பணியாளர்'}</option>
+                <option value="farmer">{isEn ? 'Farmer' : 'விவசாயி'}</option>
+                <option value="self_employed">{isEn ? 'Self Employed' : 'சுயதொழில்'}</option>
+                <option value="unemployed">{isEn ? 'Unemployed' : 'வேலையில்லாதவர்'}</option>
+                <option value="other">{isEn ? 'Other' : 'மற்றவை'}</option>
               </select>
             </div>
 
             {/* 6. Annual Income */}
             <div className="form-group">
               <label htmlFor="modal-income" className="form-label">
-                ஆண்டு குடும்ப வருமானம்
+                {isEn ? 'Annual Family Income' : 'ஆண்டு குடும்ப வருமானம்'}
               </label>
               <input
                 id="modal-income"
                 type="number"
                 min="0"
                 step="5000"
-                placeholder="₹ எடுத்துக்காட்டு: 100000"
+                placeholder={isEn ? '₹ e.g. 100000' : '₹ எடுத்துக்காட்டு: 100000'}
                 value={annualIncome}
                 onChange={(e) => setAnnualIncome(e.target.value)}
                 className="form-input"
@@ -226,12 +232,12 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
             {/* 7. District */}
             <div className="form-group form-group-full">
               <label htmlFor="modal-district" className="form-label">
-                மாவட்டம்
+                {isEn ? 'District' : 'மாவட்டம்'}
               </label>
               <input
                 id="modal-district"
                 type="text"
-                placeholder="எடுத்துக்காட்டு: சென்னை, மதுரை, கோயம்புத்தூர்"
+                placeholder={isEn ? 'e.g. Chennai, Madurai, Coimbatore' : 'எடுத்துக்காட்டு: சென்னை, மதுரை, கோயம்புத்தூர்'}
                 value={district}
                 onChange={(e) => setDistrict(e.target.value)}
                 className="form-input"
@@ -240,7 +246,11 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
           </div>
 
           <div className="modal-trust-note">
-            <span>🔒 உங்கள் தகவல்கள் இந்த அமர்வில் மட்டும் பயன்படுத்தப்படும்.</span>
+            <span>
+              {isEn
+                ? '🔒 Your information is used only temporarily during this session.'
+                : '🔒 உங்கள் தகவல்கள் இந்த அமர்வில் மட்டும் பயன்படுத்தப்படும்.'}
+            </span>
           </div>
 
           <div className="modal-actions-footer">
@@ -250,11 +260,15 @@ export const EligibilityModal: React.FC<EligibilityModalProps> = ({
               onClick={onClose}
               disabled={isLoading}
             >
-              ரத்து செய்
+              {isEn ? 'Cancel' : 'ரத்து செய்'}
             </button>
             <button type="submit" className="btn-modal-submit" disabled={isLoading}>
               <ShieldCheck size={22} />
-              <span>{isLoading ? 'சரிபார்க்கப்படுகிறது...' : '✓ தகுதியை சரிபார்க்கவும்'}</span>
+              <span>
+                {isLoading
+                  ? (isEn ? 'Checking...' : 'சரிபார்க்கப்படுகிறது...')
+                  : (isEn ? '✓ Check Eligibility' : '✓ தகுதியை சரிபார்க்கவும்')}
+              </span>
             </button>
           </div>
         </form>

@@ -17,6 +17,8 @@ export const Header: React.FC<HeaderProps> = ({
   fontScale = 'normal',
   onFontScaleChange,
 }) => {
+  const isEn = currentLanguage === 'en';
+
   return (
     <header className="header-container" role="banner">
       <div className="header-content">
@@ -30,7 +32,9 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
           <p className="brand-subtitle">
-            தமிழில் அரசு நலத்திட்டங்களை எளிதாக கண்டறியுங்கள்
+            {isEn
+              ? 'Easily discover Tamil Nadu government welfare schemes'
+              : 'தமிழில் அரசு நலத்திட்டங்களை எளிதாக கண்டறியுங்கள்'}
           </p>
         </div>
 
@@ -41,29 +45,38 @@ export const Header: React.FC<HeaderProps> = ({
               className="check-eligibility-header-btn"
               onClick={onOpenEligibilityModal}
             >
-              🎯 தகுதி சரிபார்ப்பு
+              {isEn ? '🎯 Check Eligibility' : '🎯 தகுதி சரிபார்ப்பு'}
             </button>
           )}
 
-          <button
-            type="button"
-            className="language-toggle-btn"
-            onClick={() => onLanguageToggle?.(currentLanguage === 'ta' ? 'en' : 'ta')}
-            aria-label="மொழியினை மாற்றவும்"
-          >
-            <span className={currentLanguage === 'ta' ? 'active-lang' : ''}>தமிழ்</span>
+          <div className="language-selector-group" aria-label="Language Selector">
+            <button
+              type="button"
+              className={`lang-option-btn ${currentLanguage === 'ta' ? 'active-lang' : ''}`}
+              onClick={() => onLanguageToggle?.('ta')}
+              aria-label="தமிழ் மொழியைத் தேர்ந்தெடுக்கவும்"
+            >
+              தமிழ்
+            </button>
             <span className="lang-divider">|</span>
-            <span className={currentLanguage === 'en' ? 'active-lang' : ''}>English</span>
-          </button>
+            <button
+              type="button"
+              className={`lang-option-btn ${currentLanguage === 'en' ? 'active-lang' : ''}`}
+              onClick={() => onLanguageToggle?.('en')}
+              aria-label="Select English language"
+            >
+              English
+            </button>
+          </div>
 
           {onFontScaleChange && (
-            <div className="font-scale-group" aria-label="உரை அளவு மாற்றி">
+            <div className="font-scale-group" aria-label={isEn ? 'Text size controls' : 'உரை அளவு மாற்றி'}>
               <button
                 type="button"
                 className={`font-scale-btn ${fontScale === 'normal' ? 'active' : ''}`}
                 onClick={() => onFontScaleChange('normal')}
-                title="இயல்பு அளவு"
-                aria-label="இயல்பு உரை அளவு"
+                title={isEn ? 'Normal size' : 'இயல்பு அளவு'}
+                aria-label={isEn ? 'Normal text size' : 'இயல்பு உரை அளவு'}
               >
                 A-
               </button>
@@ -71,8 +84,8 @@ export const Header: React.FC<HeaderProps> = ({
                 type="button"
                 className={`font-scale-btn ${fontScale === 'large' ? 'active' : ''}`}
                 onClick={() => onFontScaleChange('large')}
-                title="பெரிய அளவு"
-                aria-label="பெரிய உரை அளவு"
+                title={isEn ? 'Large size' : 'பெரிய அளவு'}
+                aria-label={isEn ? 'Large text size' : 'பெரிய உரை அளவு'}
               >
                 A
               </button>
@@ -80,8 +93,8 @@ export const Header: React.FC<HeaderProps> = ({
                 type="button"
                 className={`font-scale-btn ${fontScale === 'xlarge' ? 'active' : ''}`}
                 onClick={() => onFontScaleChange('xlarge')}
-                title="மிகப் பெரிய அளவு"
-                aria-label="மிகப் பெரிய உரை அளவு"
+                title={isEn ? 'Extra large size' : 'மிகப் பெரிய அளவு'}
+                aria-label={isEn ? 'Extra large text size' : 'மிகப் பெரிய உரை அளவு'}
               >
                 A+
               </button>

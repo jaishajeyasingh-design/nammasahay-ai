@@ -13,7 +13,12 @@ export type FontScale = 'normal' | 'large' | 'xlarge';
 export function App() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [language, setLanguage] = useState<SupportedLanguage>('ta');
+  
+  // Restore language from localStorage 'nammasahay-language' with 'ta' default
+  const [language, setLanguage] = useState<SupportedLanguage>(() => {
+    return (localStorage.getItem('nammasahay-language') as SupportedLanguage) || 'ta';
+  });
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fontScale, setFontScale] = useState<FontScale>(() => {
     return (localStorage.getItem('nammasahay_font_scale') as FontScale) || 'normal';
@@ -28,12 +33,17 @@ export function App() {
     localStorage.setItem('nammasahay_font_scale', scale);
   };
 
+  const handleLanguageToggle = (newLang: SupportedLanguage) => {
+    setLanguage(newLang);
+    localStorage.setItem('nammasahay-language', newLang);
+  };
+
   const handleSendMessage = async (queryText: string, profile?: UserProfile) => {
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     // Add user message to UI
     const userMsgText = profile
-      ? `🎯 சுயவிவர தகுதி சரிபார்ப்பு`
+      ? (language === 'en' ? '🎯 Profile Eligibility Check' : '🎯 சுயவிவர தகுதி சரிபார்ப்பு')
       : queryText;
 
     const userMsg: DisplayMessage = {
@@ -47,17 +57,21 @@ export function App() {
     setIsLoading(true);
 
     try {
-      // Call existing backend API service with user_profile
+      // Call backend API service with current selected language
       const response = await sendChatQuery({
         message: queryText,
         language: language,
         user_profile: profile,
       });
 
+      const responseText = language === 'en'
+        ? (response.response_english || response.response_tamil)
+        : (response.response_tamil || response.response_english);
+
       const assistantMsg: DisplayMessage = {
         id: `assistant-${Date.now()}`,
         sender: 'assistant',
-        text: language === 'en' ? (response.response_english || response.response_tamil) : (response.response_tamil || response.response_english),
+        text: responseText,
         responseObject: response,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
@@ -66,10 +80,14 @@ export function App() {
     } catch (error) {
       console.error('Error fetching chat response:', error);
 
+      const errorMsgText = language === 'en'
+        ? 'Sorry! Unable to connect to the service currently. Please check if the backend server is running.'
+        : 'மன்னிக்கவும்! தற்போது சேவையை அணுக முடியவில்லை.\nBackend server இயங்குகிறதா என்பதை சரிபார்க்கவும்.';
+
       const errorMsg: DisplayMessage = {
         id: `error-${Date.now()}`,
         sender: 'assistant',
-        text: 'மன்னிக்கவும்! தற்போது சேவையை அணுக முடியவில்லை.\nBackend server இயங்குகிறதா என்பதை சரிபார்க்கவும்.',
+        text: errorMsgText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -80,14 +98,18 @@ export function App() {
   };
 
   const handleProfileSubmit = (profile: UserProfile) => {
-    handleSendMessage('எனக்கான அரசு நலத்திட்டங்கள் மற்றும் தகுதி விவரங்கள் என்ன?', profile);
+    const query = language === 'en'
+      ? 'What government schemes and eligibility details are available for me?'
+      : 'எனக்கான அரசு நலத்திட்டங்கள் மற்றும் தகுதி விவரங்கள் என்ன?';
+
+    handleSendMessage(query, profile);
   };
 
   return (
     <div className={`app-container font-scale-${fontScale}`}>
       <Header
         currentLanguage={language}
-        onLanguageToggle={(newLang) => setLanguage(newLang)}
+        onLanguageToggle={handleLanguageToggle}
         onOpenEligibilityModal={() => setIsModalOpen(true)}
         fontScale={fontScale}
         onFontScaleChange={handleFontScaleChange}
@@ -98,16 +120,22 @@ export function App() {
           onSelectSuggestion={(query) => handleSendMessage(query)}
           onOpenEligibilityModal={() => setIsModalOpen(true)}
           isLoading={isLoading}
+          language={language}
         />
-        <ChatInput onSendMessage={(query) => handleSendMessage(query)} isLoading={isLoading} />
+        <ChatInput
+          onSendMessage={(query) => handleSendMessage(query)}
+          isLoading={isLoading}
+          language={language}
+        />
       </main>
-      <Footer />
+      <Footer language={language} />
 
       <EligibilityModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmitProfile={handleProfileSubmit}
         isLoading={isLoading}
+        language={language}
       />
     </div>
   );

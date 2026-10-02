@@ -1,4 +1,5 @@
 import React from 'react';
+import { SupportedLanguage } from '../types/api';
 
 interface SuggestionCardProps {
   text: string;
@@ -6,6 +7,7 @@ interface SuggestionCardProps {
   icon?: string;
   onClick: (suggestion: string) => void;
   variant?: 'category' | 'chip';
+  language?: SupportedLanguage;
 }
 
 export const SuggestionCard: React.FC<SuggestionCardProps> = ({
@@ -14,7 +16,10 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({
   icon,
   onClick,
   variant = 'chip',
+  language = 'ta',
 }) => {
+  const isEn = language === 'en';
+
   if (variant === 'category') {
     return (
       <button
@@ -29,7 +34,7 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({
         </div>
         {subtitle && <p className="category-subtitle">{subtitle}</p>}
         <div className="category-action" aria-hidden="true">
-          <span>திட்டங்களைப் பார்க்கவும்</span>
+          <span>{isEn ? 'View Schemes' : 'திட்டங்களைப் பார்க்கவும்'}</span>
           <span className="action-arrow">→</span>
         </div>
       </button>
