@@ -4,15 +4,10 @@ from app.schemas.chat import EligibilityResult, SchemeMatch, UserProfile
 
 
 class EligibilityEngine:
-    def evaluate(
-        self, profile: Optional[UserProfile], matched_schemes: list[SchemeMatch]
+    def evaluate_scheme(
+        self, profile: Optional[UserProfile], scheme_id: str
     ) -> Optional[EligibilityResult]:
-        if not matched_schemes:
-            return None
-
-        primary_scheme_id = matched_schemes[0].scheme_id
-        scheme_data = next((s for s in TAMIL_NADU_SCHEMES if s["id"] == primary_scheme_id), None)
-
+        scheme_data = next((s for s in TAMIL_NADU_SCHEMES if s["id"] == scheme_id), None)
         if not scheme_data:
             return None
 
@@ -20,6 +15,14 @@ class EligibilityEngine:
         matched: list[str] = []
         missing: list[str] = []
         failed: list[str] = []
+
+        # Map occupation to is_student if is_student is not explicitly provided
+        is_student_val = profile.is_student if profile else None
+        if is_student_val is None and profile and profile.occupation:
+            if profile.occupation.lower() == "student":
+                is_student_val = True
+            elif profile.occupation.lower() in ["employee", "farmer", "self_employed", "unemployed"]:
+                is_student_val = False
 
         # 1. Evaluate only rules present in scheme's stored eligibility_rules
         if "gender" in rules:
@@ -55,9 +58,9 @@ class EligibilityEngine:
                 failed.append("குடும்பத் தலைவிக்கு மட்டுமே இத்திட்டம் பொருந்தும்.")
 
         if "is_student" in rules:
-            if not profile or profile.is_student is None:
+            if is_student_val is None:
                 missing.append("மாணவர் நிலை விவரம் தேவை (Student status required).")
-            elif profile.is_student is True:
+            elif is_student_val is True:
                 matched.append("மாணவர்/மாணவி தகுதி உறுதி செய்யப்பட்டது.")
             else:
                 failed.append("மாணவர் நிலைக்கு மட்டுமே பொருந்தும்.")
@@ -82,3 +85,21 @@ class EligibilityEngine:
             missing_criteria=missing + failed,
             required_documents=scheme_data.get("required_documents_ta", [])
         )
+
+    def evaluate(
+        self, profile: Optional[UserProfile], matched_schemes: list[SchemeMatch]
+    ) -> Optional[EligibilityResult]:
+        if not matched_schemes:
+            return None
+        return self.evaluate_scheme(profile, matched_schemes[0].scheme_id)
+
+    def evaluate_all(
+        self, profile: Optional[UserProfile], matched_schemes: list[SchemeMatch]
+    ) -> dict[str, EligibilityResult]:
+        res: dict[str, EligibilityResult] = {}
+        for s in matched_schemes:
+            eval_res = self.evaluate_scheme(profile, s.scheme_id)
+            if eval_res:
+                res[s.scheme_id] = eval_res
+        return res
+

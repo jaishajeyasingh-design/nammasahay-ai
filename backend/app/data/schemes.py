@@ -17,8 +17,8 @@ TAMIL_NADU_SCHEMES_DATA: list[GovernmentScheme] = [
         summary_en="Monthly financial assistance of ₹1,000 directly transferred to bank accounts for eligible women heads of households in Tamil Nadu.",
         summary_ta="தமிழ்நாட்டில் உள்ள தகுதியான குடும்பத் தலைவிகளுக்கு மாதம் ₹1,000 நேரடி வங்கிப் பரிமாற்றம் மூலம் உரிமைத் தொகை வழங்கும் திட்டம்.",
         keywords=[
-            "1000", "உரிமைத் தொகை", "மகளிர்", "பெண்கள்", "மகளிர் உரிமை", "குடும்பத் தலைவி",
-            "magalir", "urimai", "1000 rupees", "women", "head of family"
+            "1000", "உரிமைத் தொகை", "மகளிர்", "பெண்கள்", "பெண்", "மகளிர் உரிமை", "குடும்பத் தலைவி",
+            "பெண்களுக்கான", "மகளிர்க்கான", "magalir", "urimai", "1000 rupees", "women", "female", "head of family"
         ],
         benefit=SchemeBenefit(
             amount_inr=1000.0,
@@ -66,8 +66,10 @@ TAMIL_NADU_SCHEMES_DATA: list[GovernmentScheme] = [
         summary_en="Monthly Direct Benefit Transfer (DBT) cash incentive of ₹1,000 for female students who studied Classes 6 to 12 in Govt schools / Govt-aided Tamil-medium schools to pursue higher education.",
         summary_ta="அரசுப் பள்ளிகள் / அரசு உதவிபெறும் தமிழ் வழிப் பள்ளிகளில் (6 முதல் 12-ஆம் வகுப்பு வரை) படித்து உயர்கல்வி பயிலும் மாணவிகளுக்கு மாதம் ₹1,000 நேரடி வங்கிப் பரிமாற்றம் (DBT) உதவித் தொகை வழங்கும் திட்டம்.",
         keywords=[
-            "புதுமைப் பெண்", "மாணவிகள்", "கல்லூரி", "உயர்கல்வி", "அரசு பள்ளி",
-            "pudhumai penn", "girl student", "college", "higher education", "1000"
+            "புதுமைப் பெண்", "புதுமை பெண்", "மாணவிகள்", "மாணவர்கள்", "மாணவர்", "மாணவி",
+            "மாணவர்களுக்கு", "மாணவிகளுக்கு", "பெண்கள்", "பெண்களுக்கான", "மகளிர்", "கல்லூரி",
+            "உயர்கல்வி", "அரசு பள்ளி", "pudhumai penn", "girl student", "female student",
+            "college", "higher education", "1000", "school", "education"
         ],
         benefit=SchemeBenefit(
             amount_inr=1000.0,
@@ -121,7 +123,8 @@ TAMIL_NADU_SCHEMES_DATA: list[GovernmentScheme] = [
         summary_ta="தகுதியுள்ள குடும்பங்களுக்கு ஆண்டுக்கு ₹5 லட்சம் வரை இலவச மருத்துவ சிகிச்சை மற்றும் அறுவை சிகிச்சை காப்பீடு வழங்கும் திட்டம்.",
         keywords=[
             "மருத்துவக் காப்பீடு", "காப்பீடு", "ஆஸ்பத்திரி", "மருத்துவமனை", "இலவச சிகிச்சை",
-            "health insurance", "cmchis", "hospital", "medical coverage", "5 lakhs"
+            "மருத்துவம்", "சிகிச்சை", "health insurance", "cmchis", "hospital", "medical coverage",
+            "5 lakhs", "health", "medical"
         ],
         benefit=SchemeBenefit(
             amount_inr=500000.0,
@@ -166,8 +169,10 @@ TAMIL_NADU_SCHEMES_DATA: list[GovernmentScheme] = [
         summary_en="Employment-linked skill enhancement, technical training, and career counselling platform for youth aged 18-35 and students across Tamil Nadu launched on 1 March 2022.",
         summary_ta="தமிழ்நாடு 18-35 வயதுள்ள இளைஞர்கள் மற்றும் மாணவர்களுக்கான வேலைவாய்ப்புடன் கூடிய தொழில் திறன் பயிற்சி மற்றும் வழிகாட்டல் திட்டம் (தொடக்கம்: 1 மார்ச் 2022).",
         keywords=[
-            "நான் முதல்வன்", "பயிற்சி", "வேலைவாய்ப்பு", "திறன் வளர்ச்சி", "கல்லூரி மாணவர்",
-            "naan mudhalvan", "skill development", "training", "jobs", "career"
+            "நான் முதல்வன்", "நான்முதல்வன்", "பயிற்சி", "வேலைவாய்ப்பு", "வேலை", "திறன் வளர்ச்சி",
+            "திறன் மேம்பாடு", "மாணவர்கள்", "மாணவர்", "மாணவி", "மாணவிகள்", "மாணவர்களுக்கு",
+            "கல்லூரி", "இளைஞர்கள்", "naan mudhalvan", "skill development", "training", "jobs",
+            "career", "students", "youth"
         ],
         benefit=SchemeBenefit(
             amount_inr=None,

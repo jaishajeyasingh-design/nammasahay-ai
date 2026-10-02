@@ -28,15 +28,19 @@ def chat_pipeline(request: ChatRequest) -> ChatResponse:
         # 2. Scheme / Service Retrieval
         matched_schemes, retrieval_confidence = scheme_retriever.search(request.message)
 
-        # 3. Eligibility Engine (Only run for explicit eligibility checks)
-        if intent.intent_type == IntentType.ELIGIBILITY_CHECK:
+        # 3. Eligibility Engine (Run for eligibility checks or when user profile is submitted)
+        if intent.intent_type == IntentType.ELIGIBILITY_CHECK or request.user_profile is not None:
             eligibility_result = eligibility_engine.evaluate(
+                profile=request.user_profile,
+                matched_schemes=matched_schemes,
+            )
+            eligibility_map = eligibility_engine.evaluate_all(
                 profile=request.user_profile,
                 matched_schemes=matched_schemes,
             )
         else:
             eligibility_result = None
-
+            eligibility_map = None
 
         # 4. Response Generation & Tamil formatting with sources
         response = response_generator.generate(
@@ -45,6 +49,7 @@ def chat_pipeline(request: ChatRequest) -> ChatResponse:
             schemes=matched_schemes,
             retrieval_confidence=retrieval_confidence,
             eligibility=eligibility_result,
+            eligibility_map=eligibility_map,
             language=request.language,
         )
 

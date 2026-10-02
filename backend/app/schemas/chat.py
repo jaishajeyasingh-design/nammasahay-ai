@@ -22,6 +22,7 @@ class UserProfile(BaseModel):
     district: Optional[str] = Field(default=None, description="District in Tamil Nadu")
     is_student: Optional[bool] = Field(default=None, description="Whether the applicant is a student")
     is_head_of_family: Optional[bool] = Field(default=None, description="Whether applicant is head of household")
+    occupation: Optional[str] = Field(default=None, description="Occupation of the applicant (e.g., student, employee, farmer)")
 
 
 class ChatRequest(BaseModel):
@@ -71,6 +72,8 @@ class ChatResponse(BaseModel):
     retrieval_confidence: str = Field(default="none", description="high, medium, low, or none")
     matched_schemes: list[SchemeMatch] = Field(default_factory=list)
     eligibility: Optional[EligibilityResult] = None
+    eligibility_map: Optional[dict[str, EligibilityResult]] = Field(default=None, description="Per-scheme eligibility evaluation map")
     sources: list[VerificationSource] = Field(default_factory=list)
     action_steps: list[str] = Field(default_factory=list)
+
 

@@ -19,12 +19,13 @@ class ResponseGenerator:
         schemes: list[SchemeMatch],
         retrieval_confidence: str,
         eligibility: Optional[EligibilityResult],
+        eligibility_map: Optional[dict[str, EligibilityResult]] = None,
         language: SupportedLanguage = SupportedLanguage.TAMIL,
     ) -> ChatResponse:
         sources: list[VerificationSource] = []
         action_steps: list[str] = []
 
-        # FIX 3: Handling Low/None Retrieval Confidence (No arbitrary schemes)
+        # Handling Low/None Retrieval Confidence (No arbitrary schemes)
         if retrieval_confidence == "none" or not schemes:
             ta_text = (
                 "இந்த கேள்விக்கு பொருத்தமான அரசு நலத்திட்டம் அல்லது பொது சேவை தகவல் கிடைக்கவில்லை. "
@@ -41,33 +42,33 @@ class ResponseGenerator:
                 retrieval_confidence="none",
                 matched_schemes=[],
                 eligibility=None,
+                eligibility_map=None,
                 sources=[],
                 action_steps=["அரசு நலத்திட்டம் அல்லது சேவை பெயரைக் குறிப்பிட்டு மீண்டும் கேட்கவும்."]
             )
 
-        # Static Reference Sources with verification metadata
-        primary_scheme = schemes[0]
-        scheme_raw = next((s for s in TAMIL_NADU_SCHEMES if s["id"] == primary_scheme.scheme_id), None)
-        if scheme_raw:
-            sv = scheme_raw.get("source_verification", {})
-            sources.append(
-                VerificationSource(
-                    title=scheme_raw["title_ta"],
-                    department=scheme_raw["department"],
-                    url=scheme_raw["official_url"],
-                    helpline=scheme_raw.get("helpline"),
-                    is_static_seed=sv.get("is_static_seed", True),
-                    verification_status=sv.get("verification_status", "pending_review")
+        # Populate Verification Sources for all retrieved schemes
+        for s_match in schemes:
+            scheme_raw = next((s for s in TAMIL_NADU_SCHEMES if s["id"] == s_match.scheme_id), None)
+            if scheme_raw:
+                sv = scheme_raw.get("source_verification", {})
+                sources.append(
+                    VerificationSource(
+                        title=scheme_raw["title_ta"],
+                        department=scheme_raw["department"],
+                        url=scheme_raw["official_url"],
+                        helpline=scheme_raw.get("helpline"),
+                        is_static_seed=sv.get("is_static_seed", True),
+                        verification_status=sv.get("verification_status", "pending_review")
+                    )
                 )
-            )
 
-
-        # FIX 5: Safe response generation based on intent and eligibility
+        # Safe response generation based on intent and eligibility
         if intent.intent_type == IntentType.ELIGIBILITY_CHECK:
             if eligibility and eligibility.status == "eligible":
                 ta_text = (
-                    f"வழங்கப்பட்ட தகவலின் அடிப்படையில், நீங்கள் **{schemes[0].title_ta}** திட்டத்திற்கு தகுதியுடையவராக இருக்கலாம். "
-                    f"அதிகாரப்பூர்வ அரசு இணையதளத்தில் ({schemes[0].official_url}) விவரங்களை சரிபார்த்து விண்ணப்பிக்கவும்."
+                    f"வழங்கப்பட்ட தகவலின் அடிப்படையில், நீங்கள் {schemes[0].title_ta} திட்டத்திற்கு தகுதியுடையவராக இருக்கலாம். "
+                    f"அதிகாரப்பூர்வ அரசு இணையதளத்தில் விவரங்களை சரிபார்த்து விண்ணப்பிக்கவும்."
                 )
                 en_text = (
                     f"Based on the information provided, you appear eligible for {schemes[0].title_en}. "
@@ -81,7 +82,7 @@ class ResponseGenerator:
             elif eligibility and eligibility.status == "needs_more_info":
                 missing_str = "\n".join([f"• {item}" for item in eligibility.missing_criteria]) if eligibility.missing_criteria else "மேலும் விவரங்கள்"
                 ta_text = (
-                    f"**{schemes[0].title_ta}** திட்டத்திற்கான தகுதியை முழுமையாக சரிபார்க்க மேலும் விவரங்கள் தேவை:\n\n"
+                    f"{schemes[0].title_ta} திட்டத்திற்கான தகுதியை முழுமையாக சரிபார்க்க மேலும் விவரங்கள் தேவை:\n\n"
                     f"{missing_str}\n\n"
                     f"தயவுசெய்து உங்கள் சுயவிவரத்தில் தேவையான விவரங்களை வழங்கவும்."
                 )
@@ -96,7 +97,7 @@ class ResponseGenerator:
 
             else:
                 ta_text = (
-                    f"வழங்கப்பட்ட தகவலின் அடிப்படையில், நீங்கள் **{schemes[0].title_ta}** திட்டத்தின் சில வரம்புகளை பூர்த்தி செய்யவில்லை. "
+                    f"வழங்கப்பட்ட தகவலின் அடிப்படையில், நீங்கள் {schemes[0].title_ta} திட்டத்தின் சில வரம்புகளை பூர்த்தி செய்யவில்லை. "
                     f"சந்தேகங்களுக்கு அதிகாரப்பூர்வ தளத்தை பார்வையிடவும்."
                 )
                 en_text = f"Based on the details provided, you do not satisfy all criteria for {schemes[0].title_en}."
@@ -105,11 +106,11 @@ class ResponseGenerator:
         elif intent.intent_type == IntentType.APPLICATION_PROCESS:
             s = schemes[0]
             ta_text = (
-                f"**{s.title_ta}** விண்ணப்பிக்கும் முறை:\n\n"
+                f"{s.title_ta} விண்ணப்பிக்கும் முறை:\n\n"
                 f"1. அதிகாரப்பூர்வ இணையதளத்திற்குச் செல்லவும்: {s.official_url}\n"
                 f"2. தேவையான ஆவணங்களை தயாராக வைக்கவும்.\n"
-                f"3. உதவிக்கு அரசு அழைப்பு எண்: {sources[0].helpline if sources else '1100'}\n\n"
-                f"*குறிப்பு: விண்ணப்பிக்கும் முன் அதிகாரப்பூர்வ போர்ட்டலில் தற்போதைய நிபந்தனைகளை சரிபார்க்கவும்.*"
+                f"3. உதவிக்கு அரசு அழைப்பு எண்: {sources[0].helpline if sources and sources[0].helpline else '1100'}\n\n"
+                f"குறிப்பு: விண்ணப்பிக்கும் முன் அதிகாரப்பூர்வ போர்ட்டலில் தற்போதைய நிபந்தனைகளை சரிபார்க்கவும்."
             )
             en_text = (
                 f"Application process for {s.title_en}: Visit official portal {s.official_url} with required documents. "
@@ -121,17 +122,19 @@ class ResponseGenerator:
             ]
 
         else:
-            s = schemes[0]
-            ta_text = (
-                f"**{s.title_ta} ({s.title_en})**\n\n"
-                f"{s.summary_ta}\n\n"
-                f"துறை: {s.department}\n"
-                f"அதிகாரப்பூர்வ இணையதளம்: {s.official_url}"
-            )
-            en_text = f"{s.title_en}: {s.summary_en} (Department: {s.department}, Portal: {s.official_url})"
-            action_steps = [
-                f"திட்டம் பற்றிய அதிகாரப்பூர்வ விவரங்களுக்கு {s.official_url} காண்க."
-            ]
+            if len(schemes) > 1:
+                ta_text = f"உங்கள் கேள்விக்கு {len(schemes)} அரசு நலத்திட்டங்கள் கண்டறியப்பட்டுள்ளன."
+                en_text = f"Found {len(schemes)} matching government schemes for your query."
+                action_steps = [
+                    "ஒவ்வொரு திட்டத்தின் தகுதி விவரங்களையும் அதிகாரப்பூர்வ போர்ட்டலில் சரிபார்க்கவும்."
+                ]
+            else:
+                s = schemes[0]
+                ta_text = f"{s.title_ta} - {s.summary_ta}"
+                en_text = f"{s.title_en}: {s.summary_en}"
+                action_steps = [
+                    f"திட்டம் பற்றிய அதிகாரப்பூர்வ விவரங்களுக்கு {s.official_url} காண்க."
+                ]
 
         return ChatResponse(
             response_tamil=ta_text,
@@ -140,7 +143,7 @@ class ResponseGenerator:
             retrieval_confidence=retrieval_confidence,
             matched_schemes=schemes,
             eligibility=eligibility,
+            eligibility_map=eligibility_map,
             sources=sources,
             action_steps=action_steps
         )
-

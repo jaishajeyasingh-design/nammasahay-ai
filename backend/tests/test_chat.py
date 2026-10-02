@@ -253,6 +253,147 @@ class TestChatPipeline(unittest.TestCase):
         self.assertEqual(data["intent"]["intent_type"], "eligibility_check")
         self.assertIsNotNone(data["eligibility"])
 
+    # 23. Broad Query: Student schemes discovery
+    def test_multi_scheme_student_query(self):
+        payload = {"message": "மாணவர்களுக்கு என்ன அரசு திட்டங்கள் உள்ளன?", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        matched_ids = [s["scheme_id"] for s in data["matched_schemes"]]
+        self.assertTrue(len(matched_ids) >= 2, f"Expected at least 2 schemes, got {len(matched_ids)}")
+        self.assertIn("pudhumai_penn", matched_ids)
+        self.assertIn("naan_mudhalvan", matched_ids)
+
+    # 24. Broad Query: Women schemes discovery
+    def test_multi_scheme_women_query(self):
+        payload = {"message": "பெண்களுக்கான அரசு நலத்திட்டங்கள் என்ன?", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        matched_ids = [s["scheme_id"] for s in data["matched_schemes"]]
+        self.assertTrue(len(matched_ids) >= 2, f"Expected at least 2 schemes, got {len(matched_ids)}")
+        self.assertIn("kmut", matched_ids)
+        self.assertIn("pudhumai_penn", matched_ids)
+
+    # 25. Broad Query: All available schemes discovery
+    def test_multi_scheme_general_query(self):
+        payload = {"message": "எனக்கு என்ன அரசு திட்டங்கள் கிடைக்கும்?", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        matched_ids = [s["scheme_id"] for s in data["matched_schemes"]]
+        self.assertTrue(len(matched_ids) >= 3, f"Expected at least 3 schemes, got {len(matched_ids)}")
+        self.assertIn("kmut", matched_ids)
+        self.assertIn("pudhumai_penn", matched_ids)
+
+    # 26. Specific Scheme Lookup: Pudhumai Penn query
+    def test_specific_pudhumai_penn_query(self):
+        payload = {"message": "Pudhumai Penn திட்டம் பற்றி சொல்லுங்கள்", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        matched_ids = [s["scheme_id"] for s in data["matched_schemes"]]
+        self.assertIn("pudhumai_penn", matched_ids)
+
+    # 27. Eligibility Query: Preserves eligibility evaluation
+    def test_eligibility_query_preserves_evaluation(self):
+        payload = {"message": "நான் இந்த திட்டத்திற்கு தகுதியானவரா?", "language": "ta"}
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["intent"]["intent_type"], "eligibility_check")
+
+    # 28. Profile Flow: Eligible female student profile
+    def test_profile_eligible_female_student(self):
+        payload = {
+            "message": "புதுமைப் பெண் திட்டம் பெற நான் தகுதியானவளா?",
+            "language": "ta",
+            "user_profile": {
+                "age": 20,
+                "gender": "female",
+                "is_student": True,
+                "occupation": "student",
+                "annual_income": 90000,
+                "district": "Chennai"
+            }
+        }
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNotNone(data["eligibility"])
+        self.assertIsNotNone(data["eligibility_map"])
+        self.assertIn("pudhumai_penn", data["eligibility_map"])
+
+    # 29. Profile Flow: Ineligible profile (male user for female scheme)
+    def test_profile_ineligible_male_kmut(self):
+        payload = {
+            "message": "கலைஞர் மகளிர் உரிமைத் திட்டம் பெற நான் தகுதியானவனா?",
+            "language": "ta",
+            "user_profile": {
+                "age": 30,
+                "gender": "male",
+                "is_head_of_family": False
+            }
+        }
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNotNone(data["eligibility"])
+        self.assertEqual(data["eligibility"]["status"], "not_eligible")
+
+    # 30. Profile Flow: Missing information profile
+    def test_profile_missing_information(self):
+        payload = {
+            "message": "முதலமைச்சரின் விரிவான மருத்துவக் காப்பீட்டுத் திட்டம் பெற தகுதி உள்ளதா?",
+            "language": "ta",
+            "user_profile": {
+                "district": "Madurai"
+            }
+        }
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNotNone(data["eligibility"])
+        self.assertEqual(data["eligibility"]["status"], "needs_more_info")
+
+    # 31. Profile Flow: Multiple matching schemes evaluation
+    def test_profile_multiple_matching_schemes(self):
+        payload = {
+            "message": "மாணவர்களுக்கான அரசு திட்டங்கள் என்னென்ன?",
+            "language": "ta",
+            "user_profile": {
+                "age": 19,
+                "gender": "female",
+                "is_student": True,
+                "district": "Coimbatore"
+            }
+        }
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(len(data["matched_schemes"]) >= 2)
+        self.assertIsNotNone(data["eligibility_map"])
+        self.assertIn("pudhumai_penn", data["eligibility_map"])
+        self.assertIn("naan_mudhalvan", data["eligibility_map"])
+
+    # 32. Profile Flow: Unsupported/unknown profile values (e.g. excessive income)
+    def test_profile_unsupported_unknown_values(self):
+        payload = {
+            "message": "முதலமைச்சரின் விரிவான மருத்துவக் காப்பீட்டுத் திட்டம் தகுதி",
+            "language": "ta",
+            "user_profile": {
+                "annual_income": 5000000,  # Far exceeds 1.2L limit
+                "district": "UnknownDistrict"
+            }
+        }
+        response = self.client.post("/api/chat", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNotNone(data["eligibility"])
+        self.assertEqual(data["eligibility"]["status"], "not_eligible")
+
 
 if __name__ == "__main__":
     unittest.main()
+
+
